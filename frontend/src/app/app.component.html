@@ -1,0 +1,78 @@
+<!-- Main Navigation -->
+<mat-toolbar color="primary" *ngIf="isAuthenticated">
+  <mat-toolbar-row>
+    <span class="app-title">{{ title }}</span>
+    
+    <div class="nav-links">
+      <button mat-button routerLink="/dashboard" routerLinkActive="active">
+        <mat-icon>dashboard</mat-icon>
+        Dashboard
+      </button>
+      
+      <button mat-button routerLink="/items" routerLinkActive="active">
+        <mat-icon>inventory</mat-icon>
+        Items
+      </button>
+      
+      <button mat-button routerLink="/custody" routerLinkActive="active">
+        <mat-icon>transfer_within_a_station</mat-icon>
+        Custody
+      </button>
+      
+      <button mat-button routerLink="/audit" routerLinkActive="active" 
+              *ngIf="currentUser?.role === 'ADMIN' || currentUser?.role === 'COMPLIANCE_OFFICER' || currentUser?.role === 'AUDITOR'">
+        <mat-icon>history</mat-icon>
+        Audit
+      </button>
+    </div>
+
+    <span class="spacer"></span>
+    
+    <!-- User Menu -->
+    <div class="user-menu">
+      <button mat-icon-button [matMenuTriggerFor]="userMenu">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+      <mat-menu #userMenu="matMenu">
+        <div class="user-info">
+          <p><strong>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</strong></p>
+          <p class="user-role">{{ currentUser?.role }}</p>
+          <p class="user-org">{{ currentUser?.organization?.name }}</p>
+        </div>
+        <mat-divider></mat-divider>
+        <button mat-menu-item routerLink="/profile">
+          <mat-icon>person</mat-icon>
+          Profile
+        </button>
+        <button mat-menu-item routerLink="/settings">
+          <mat-icon>settings</mat-icon>
+          Settings
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          Logout
+        </button>
+      </mat-menu>
+    </div>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<!-- Main Content Area -->
+<div class="main-content" [class.with-nav]="isAuthenticated">
+  <router-outlet></router-outlet>
+</div>
+
+<!-- Loading Spinner -->
+<div class="loading-overlay" *ngIf="false">
+  <mat-spinner></mat-spinner>
+</div>
+
+<!-- Security Notice for HIPAA/GDPR Compliance -->
+<div class="security-notice" *ngIf="!isAuthenticated">
+  <p>
+    <mat-icon>security</mat-icon>
+    This system processes protected health information (PHI) and personal data. 
+    Access is logged and monitored for compliance with HIPAA and GDPR regulations.
+  </p>
+</div>

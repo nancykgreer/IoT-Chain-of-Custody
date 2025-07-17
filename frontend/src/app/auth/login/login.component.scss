@@ -1,0 +1,226 @@
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem 1rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 450px;
+  
+  mat-card {
+    padding: 0;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.5rem;
+  
+  .app-icon {
+    font-size: 2.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    color: #2196F3;
+  }
+  
+  mat-card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  mat-card-subtitle {
+    color: #666;
+    margin: 0;
+  }
+}
+
+.login-form {
+  padding: 0 1.5rem;
+  
+  .full-width {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  
+  .login-button {
+    height: 48px;
+    font-size: 1rem;
+    font-weight: 500;
+    margin-top: 1rem;
+    
+    .login-spinner {
+      margin-right: 0.5rem;
+    }
+  }
+}
+
+.additional-actions {
+  text-align: center;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e0e0e0;
+  
+  .forgot-password-link {
+    font-size: 0.9rem;
+  }
+}
+
+.security-notice {
+  background-color: #f8f9fa;
+  padding: 1rem 1.5rem;
+  display: flex;
+  gap: 1rem;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  
+  mat-icon {
+    color: #2196F3;
+    margin-top: 0.25rem;
+  }
+  
+  .notice-text {
+    flex: 1;
+    
+    p {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.85rem;
+      color: #666;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+      
+      strong {
+        color: #333;
+      }
+    }
+  }
+}
+
+.compliance-badges {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+  
+  .badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    
+    mat-icon {
+      font-size: 1rem;
+      width: 1rem;
+      height: 1rem;
+    }
+    
+    &.hipaa mat-icon {
+      color: #4CAF50;
+    }
+    
+    &.gdpr mat-icon {
+      color: #9C27B0;
+    }
+    
+    &.secure mat-icon {
+      color: #FF9800;
+    }
+  }
+}
+
+// Form validation styles
+.mat-form-field {
+  .is-invalid {
+    border-color: #f44336;
+  }
+}
+
+// Loading state
+.login-button:disabled {
+  opacity: 0.7;
+}
+
+// Mobile responsive
+@media (max-width: 480px) {
+  .login-container {
+    padding: 1rem 0.5rem;
+  }
+  
+  .login-card {
+    max-width: 100%;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+    
+    .app-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+  
+  .compliance-badges {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    
+    .badge {
+      justify-content: center;
+      min-width: 150px;
+    }
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .login-card mat-card {
+    border: 2px solid #000;
+  }
+  
+  .security-notice {
+    border-top: 2px solid #000;
+  }
+}
+
+// Accessibility improvements
+.login-button:focus {
+  outline: 2px solid #2196F3;
+  outline-offset: 2px;
+}
+
+// Animation for error states
+.mat-error {
+  animation: slideIn 0.3s ease-in-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,282 @@
+/* You can add global styles to this file, and also import other style files */
+@import '~@angular/material/theming';
+
+// Define custom theme colors
+$primary-color: #2196F3;
+$accent-color: #FF4081;
+$warn-color: #F44336;
+
+// Create theme
+$app-primary: mat-palette($mat-blue);
+$app-accent: mat-palette($mat-pink, A200, A100, A400);
+$app-warn: mat-palette($mat-red);
+$app-theme: mat-light-theme($app-primary, $app-accent, $app-warn);
+
+// Include theme styles
+@include angular-material-theme($app-theme);
+
+// Global styles
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+// Utility classes
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+.ml-1 { margin-left: 0.5rem; }
+.ml-2 { margin-left: 1rem; }
+.mr-1 { margin-right: 0.5rem; }
+.mr-2 { margin-right: 1rem; }
+
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; }
+.p-3 { padding: 1.5rem; }
+.p-4 { padding: 2rem; }
+
+.w-100 { width: 100%; }
+.h-100 { height: 100%; }
+
+.d-flex { display: flex; }
+.flex-column { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.align-center { align-items: center; }
+
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+.gap-3 { gap: 1.5rem; }
+
+// Status colors
+.status-active { color: #4CAF50; }
+.status-inactive { color: #9E9E9E; }
+.status-warning { color: #FF9800; }
+.status-error { color: #F44336; }
+
+.bg-status-active { background-color: #E8F5E8; color: #2E7D32; }
+.bg-status-inactive { background-color: #F5F5F5; color: #616161; }
+.bg-status-warning { background-color: #FFF3E0; color: #F57C00; }
+.bg-status-error { background-color: #FFEBEE; color: #C62828; }
+
+// Form styles
+.form-container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  
+  .mat-form-field {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+  }
+}
+
+// Table styles
+.data-table {
+  width: 100%;
+  
+  .mat-column-actions {
+    width: 120px;
+    text-align: center;
+  }
+  
+  .mat-column-status {
+    width: 100px;
+  }
+  
+  .status-chip {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+}
+
+// Card styles
+.info-card {
+  margin: 1rem;
+  
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    
+    h3 {
+      margin: 0;
+    }
+  }
+  
+  .card-stat {
+    text-align: center;
+    padding: 1rem;
+    
+    .stat-number {
+      font-size: 2rem;
+      font-weight: bold;
+      display: block;
+    }
+    
+    .stat-label {
+      font-size: 0.9rem;
+      color: #666;
+      text-transform: uppercase;
+    }
+  }
+}
+
+// Loading and error states
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+}
+
+.error-container {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 1rem;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #999;
+  
+  mat-icon {
+    font-size: 4rem;
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  
+  h3 {
+    margin: 1rem 0 0.5rem 0;
+    color: #666;
+  }
+  
+  p {
+    margin: 0;
+  }
+}
+
+// Security and compliance indicators
+.compliance-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  
+  &.hipaa {
+    background-color: #E3F2FD;
+    color: #1976D2;
+  }
+  
+  &.gdpr {
+    background-color: #F3E5F5;
+    color: #7B1FA2;
+  }
+  
+  &.critical {
+    background-color: #FFEBEE;
+    color: #C62828;
+  }
+}
+
+// Mobile responsive
+@media (max-width: 768px) {
+  .form-container {
+    margin: 1rem;
+    padding: 1rem;
+  }
+  
+  .info-card {
+    margin: 0.5rem;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+}
+
+// Print styles
+@media print {
+  .mat-toolbar,
+  .form-actions,
+  button:not(.print-button) {
+    display: none !important;
+  }
+  
+  .main-content {
+    padding: 0 !important;
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .status-chip {
+    border: 2px solid currentColor;
+  }
+}
+
+// Accessibility improvements
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Focus indicators
+button:focus,
+.mat-button:focus,
+.mat-raised-button:focus,
+.mat-icon-button:focus {
+  outline: 2px solid #2196F3;
+  outline-offset: 2px;
+}

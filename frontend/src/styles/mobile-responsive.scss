@@ -1,0 +1,606 @@
+// Mobile-First Responsive Design for Healthcare Chain of Custody
+// Optimized for field use, touch interactions, and mobile devices
+
+// Breakpoints (Material Design)
+$mobile-max: 767px;
+$tablet-min: 768px;
+$tablet-max: 1023px;
+$desktop-min: 1024px;
+$large-desktop-min: 1200px;
+
+// Mixins for responsive design
+@mixin mobile-only {
+  @media (max-width: $mobile-max) {
+    @content;
+  }
+}
+
+@mixin tablet-only {
+  @media (min-width: $tablet-min) and (max-width: $tablet-max) {
+    @content;
+  }
+}
+
+@mixin tablet-and-up {
+  @media (min-width: $tablet-min) {
+    @content;
+  }
+}
+
+@mixin desktop-only {
+  @media (min-width: $desktop-min) {
+    @content;
+  }
+}
+
+@mixin touch-device {
+  @media (hover: none) and (pointer: coarse) {
+    @content;
+  }
+}
+
+@mixin non-touch-device {
+  @media (hover: hover) and (pointer: fine) {
+    @content;
+  }
+}
+
+// Safe area support for notched devices
+@mixin safe-area-padding($property: padding) {
+  #{$property}-top: env(safe-area-inset-top);
+  #{$property}-right: env(safe-area-inset-right);
+  #{$property}-bottom: env(safe-area-inset-bottom);
+  #{$property}-left: env(safe-area-inset-left);
+}
+
+@mixin safe-area-margin($property: margin) {
+  #{$property}-top: env(safe-area-inset-top);
+  #{$property}-right: env(safe-area-inset-right);
+  #{$property}-bottom: env(safe-area-inset-bottom);
+  #{$property}-left: env(safe-area-inset-left);
+}
+
+// Mobile-specific base styles
+html {
+  // Prevent zoom on double-tap
+  touch-action: manipulation;
+  
+  // Optimize font rendering on mobile
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  // Prevent text size adjust on orientation change
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+body {
+  // Prevent overscroll/bounce on iOS
+  overscroll-behavior: none;
+  
+  // Optimize scrolling performance
+  -webkit-overflow-scrolling: touch;
+  
+  @include mobile-only {
+    // Ensure full viewport usage
+    margin: 0;
+    padding: 0;
+    
+    // Safe area support
+    @include safe-area-padding(padding);
+  }
+}
+
+// Global mobile optimizations
+* {
+  // Improve touch response
+  @include touch-device {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+}
+
+// Allow text selection for specific elements
+input, textarea, [contenteditable="true"], .selectable {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+// Component-specific mobile styles
+.app-header {
+  @include mobile-only {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    
+    .header-actions {
+      // Larger touch targets
+      .mat-icon-button {
+        width: 48px;
+        height: 48px;
+        line-height: 48px;
+      }
+    }
+  }
+}
+
+.navigation-menu {
+  @include mobile-only {
+    // Bottom navigation for mobile
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    @include safe-area-padding(padding);
+    
+    display: flex;
+    justify-content: space-around;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 12px;
+      min-height: 56px;
+      text-decoration: none;
+      color: #666;
+      font-size: 12px;
+      
+      .mat-icon {
+        margin-bottom: 4px;
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+      }
+      
+      &.active {
+        color: #2196F3;
+      }
+    }
+  }
+}
+
+// Form optimizations for mobile
+.mat-form-field {
+  @include mobile-only {
+    width: 100%;
+    
+    // Larger touch targets
+    .mat-form-field-wrapper {
+      padding-bottom: 1.5em;
+    }
+    
+    // Better input sizing
+    .mat-input-element {
+      font-size: 16px; // Prevent zoom on iOS
+      padding: 12px 16px;
+    }
+  }
+}
+
+// Button optimizations
+.mat-button, .mat-raised-button, .mat-fab, .mat-mini-fab {
+  @include mobile-only {
+    // Minimum touch target size (44px)
+    min-height: 44px;
+    min-width: 44px;
+    
+    // Better touch feedback
+    &:active {
+      transform: scale(0.98);
+      transition: transform 0.1s ease;
+    }
+  }
+}
+
+// Card layouts for mobile
+.mat-card {
+  @include mobile-only {
+    margin: 8px;
+    border-radius: 8px;
+    
+    .mat-card-header {
+      padding: 16px;
+      
+      .mat-card-title {
+        font-size: 18px;
+        line-height: 1.4;
+      }
+    }
+    
+    .mat-card-content {
+      padding: 0 16px 16px;
+      
+      // Better spacing for mobile reading
+      p {
+        line-height: 1.6;
+        margin-bottom: 16px;
+      }
+    }
+    
+    .mat-card-actions {
+      padding: 8px 16px 16px;
+      
+      .mat-button {
+        margin-right: 8px;
+        margin-bottom: 8px;
+      }
+    }
+  }
+}
+
+// Table responsiveness
+.mat-table {
+  @include mobile-only {
+    // Horizontal scroll for tables
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    
+    .mat-header-cell,
+    .mat-cell {
+      padding: 12px 8px;
+      font-size: 14px;
+    }
+    
+    // Stack table on very small screens
+    @media (max-width: 480px) {
+      .mat-header-row {
+        display: none;
+      }
+      
+      .mat-row {
+        display: block;
+        border: 1px solid #e0e0e0;
+        margin-bottom: 8px;
+        border-radius: 4px;
+        
+        .mat-cell {
+          display: block;
+          padding: 8px 12px;
+          border-bottom: 1px solid #f0f0f0;
+          
+          &:before {
+            content: attr(data-label) ": ";
+            font-weight: 600;
+            color: #666;
+          }
+          
+          &:last-child {
+            border-bottom: none;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Dialog optimizations
+.mat-dialog-container {
+  @include mobile-only {
+    margin: 16px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    
+    .mat-dialog-content {
+      max-height: 60vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+}
+
+// Snackbar positioning
+.mat-snack-bar-container {
+  @include mobile-only {
+    // Position above bottom navigation
+    bottom: 80px !important;
+    @include safe-area-margin(margin);
+  }
+}
+
+// Specific component mobile styles
+.dashboard-grid {
+  @include mobile-only {
+    display: block;
+    
+    .dashboard-card {
+      margin-bottom: 16px;
+      
+      .metric-value {
+        font-size: 2rem;
+      }
+    }
+  }
+}
+
+.item-list {
+  @include mobile-only {
+    .item-card {
+      margin: 8px;
+      
+      .item-header {
+        padding: 12px;
+        
+        .item-actions {
+          .mat-icon-button {
+            width: 40px;
+            height: 40px;
+          }
+        }
+      }
+    }
+  }
+}
+
+.custody-transfer {
+  @include mobile-only {
+    .transfer-form {
+      .form-step {
+        padding: 16px;
+        
+        .step-content {
+          .mat-form-field {
+            margin-bottom: 16px;
+          }
+        }
+      }
+    }
+  }
+}
+
+.barcode-scanner {
+  @include mobile-only {
+    .scanner-header {
+      padding: 12px;
+      
+      .scanner-actions {
+        .mat-icon-button {
+          width: 44px;
+          height: 44px;
+        }
+      }
+    }
+    
+    .video-container {
+      height: 60vh;
+      
+      .scan-overlay {
+        .scan-frame {
+          width: 80%;
+          max-width: 300px;
+        }
+      }
+    }
+  }
+}
+
+.workflow-dashboard {
+  @include mobile-only {
+    padding: 8px;
+    
+    .analytics-grid {
+      display: block;
+      
+      .metric-card {
+        margin-bottom: 12px;
+        
+        .metric-content {
+          .metric-value {
+            font-size: 1.5rem;
+          }
+        }
+      }
+    }
+    
+    .workflow-card {
+      margin-bottom: 12px;
+      
+      .workflow-actions {
+        flex-direction: column;
+        
+        .mat-button {
+          width: 100%;
+          margin-bottom: 8px;
+        }
+      }
+    }
+  }
+}
+
+.monitoring-dashboard {
+  @include mobile-only {
+    .device-status-overview {
+      .status-summary {
+        display: block;
+        
+        .status-item {
+          margin-bottom: 8px;
+          padding: 12px;
+        }
+      }
+      
+      .device-list {
+        .device-item {
+          padding: 12px;
+          
+          .device-metrics {
+            display: none; // Hide on mobile for space
+          }
+        }
+      }
+    }
+    
+    .environmental-charts {
+      .charts-grid {
+        display: block;
+        
+        .chart-card {
+          margin-bottom: 16px;
+          
+          .chart-container {
+            height: 200px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// PWA-specific styles
+.pwa-install-banner {
+  @include mobile-only {
+    position: fixed;
+    bottom: 80px; // Above bottom navigation
+    left: 16px;
+    right: 16px;
+    z-index: 1001;
+    @include safe-area-margin(margin);
+    
+    background: #2196F3;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    
+    .install-text {
+      flex: 1;
+      font-size: 14px;
+    }
+    
+    .install-actions {
+      display: flex;
+      gap: 8px;
+      
+      .mat-button {
+        color: white;
+        font-size: 12px;
+        min-width: auto;
+        padding: 6px 12px;
+      }
+    }
+  }
+}
+
+// Loading states optimized for mobile
+.mobile-loading {
+  @include mobile-only {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    
+    .mat-spinner {
+      margin-bottom: 16px;
+    }
+    
+    .loading-text {
+      font-size: 14px;
+      color: #666;
+      text-align: center;
+    }
+  }
+}
+
+// Error states for mobile
+.mobile-error {
+  @include mobile-only {
+    text-align: center;
+    padding: 24px 16px;
+    
+    .error-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      color: #F44336;
+      margin-bottom: 16px;
+    }
+    
+    .error-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    
+    .error-message {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    
+    .error-actions {
+      .mat-button {
+        margin: 4px;
+      }
+    }
+  }
+}
+
+// Accessibility improvements for mobile
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  // Dark mode support for mobile devices
+  .mobile-device {
+    background-color: #121212;
+    color: #ffffff;
+    
+    .mat-card {
+      background-color: #1e1e1e;
+    }
+    
+    .mat-form-field {
+      color: #ffffff;
+    }
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .mobile-device {
+    .mat-button,
+    .mat-raised-button {
+      border: 2px solid currentColor;
+    }
+    
+    .mat-form-field {
+      .mat-form-field-outline {
+        border-width: 2px;
+      }
+    }
+  }
+}
+
+// Battery saving mode (reduce animations and effects)
+.low-battery-mode {
+  * {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+}

@@ -1,0 +1,703 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  LAB_TECHNICIAN
+  NURSE
+  DOCTOR
+  RESEARCHER
+  COMPLIANCE_OFFICER
+  AUDITOR
+  TRANSPORT_STAFF
+}
+
+enum ItemType {
+  LAB_SPECIMEN
+  PATIENT_SAMPLE
+  MEDICAL_DEVICE
+  PHARMACEUTICAL
+}
+
+enum ItemStatus {
+  COLLECTED
+  IN_TRANSIT
+  RECEIVED
+  PROCESSING
+  STORED
+  TESTED
+  DISPOSED
+  EXPIRED
+  QUARANTINED
+}
+
+enum CustodyEventType {
+  COLLECTION
+  TRANSFER
+  RECEIPT
+  STORAGE
+  PROCESSING
+  TESTING
+  DISPOSAL
+  TEMPERATURE_ALERT
+  DAMAGE_REPORT
+}
+
+enum ComplianceStandard {
+  HIPAA
+  GDPR
+  FDA_21_CFR_PART_11
+  CLIA
+  ISO_15189
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // Hospital, Lab, Pharmacy, etc.
+  address     String
+  phone       String?
+  email       String?
+  licenseNumber String?
+  
+  // Compliance
+  complianceStandards ComplianceStandard[]
+  certifications      Json?
+  
+  // Relationships
+  users       User[]
+  locations   Location[]
+  items       Item[]
+  iotDevices  IoTDevice[]
+  heliumWebhooks HeliumWebhook[]
+  workflows   Workflow[]
+  workflowRules WorkflowRule[]
+  
+  // Audit
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  
+  @@map("organizations")
+}
+
+model Location {
+  id            String   @id @default(cuid())
+  name          String
+  address       String
+  coordinates   Json?    // lat/lng for GPS tracking
+  temperature   Float?   // Current temperature
+  humidity      Float?   // Current humidity
+  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  // Relationships
+  items         Item[]
+  custodyEventsFrom CustodyEvent[] @relation("CustodyEventFrom")
+  custodyEventsTo   CustodyEvent[] @relation("CustodyEventTo")
+  iotDevices    IoTDevice[]
+  
+  // Audit
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  
+  @@map("locations")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          UserRole
+  licenseNumber String?
+  
+  // Security
+  isActive      Boolean  @default(true)
+  lastLoginAt   DateTime?
+  failedLoginAttempts Int @default(0)
+  lockedAt      DateTime?
+  
+  // GDPR Compliance
+  consentGiven  Boolean  @default(false)
+  consentDate   DateTime?
+  dataRetentionUntil DateTime?
+  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  // Relationships
+  createdItems    Item[]
+  custodyEvents   CustodyEvent[]
+  auditLogs       AuditLog[]
+  digitalSignatures DigitalSignature[]
+  workflowSteps   WorkflowStep[]
+  workflowApprovals WorkflowApproval[]
+  
+  // Audit
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  
+  @@map("users")
+}
+
+model Item {
+  id              String     @id @default(cuid())
+  barcode         String     @unique
+  qrCode          String?    @unique
+  type            ItemType
+  status          ItemStatus @default(COLLECTED)
+  
+  // Basic Info
+  name            String
+  description     String?
+  category        String?
+  
+  // Healthcare Specific
+  patientId       String?    // Encrypted in application layer
+  specimenType    String?    // Blood, Urine, Tissue, etc.
+  lotNumber       String?    // For pharmaceuticals/devices
+  serialNumber    String?    // For devices
+  expirationDate  DateTime?
+  
+  // Condition Requirements
+  temperatureMin  Float?
+  temperatureMax  Float?
+  humidityMin     Float?
+  humidityMax     Float?
+  
+  // Current State
+  currentLocationId String?
+  currentLocation   Location? @relation(fields: [currentLocationId], references: [id])
+  
+  // Metadata (JSON for flexible schema)
+  metadata        Json?      // Type-specific data
+  
+  // Compliance
+  requiresSpecialHandling Boolean @default(false)
+  biohazardLevel         Int?    // 1-4 biosafety levels
+  
+  // Relationships
+  createdById     String
+  createdBy       User       @relation(fields: [createdById], references: [id])
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  custodyEvents   CustodyEvent[]
+  auditLogs       AuditLog[]
+  digitalSignatures DigitalSignature[]
+  workflowInstances WorkflowInstance[]
+  iotDevices      IoTDevice[]
+  
+  // Blockchain
+  blockchainTxHash String?
+  tokenId         String?
+  
+  // Audit
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime?
+  
+  @@map("items")
+}
+
+model CustodyEvent {
+  id            String           @id @default(cuid())
+  type          CustodyEventType
+  description   String?
+  
+  // Event Details
+  fromLocationId String?
+  fromLocation   Location? @relation("CustodyEventFrom", fields: [fromLocationId], references: [id])
+  toLocationId   String?
+  toLocation     Location? @relation("CustodyEventTo", fields: [toLocationId], references: [id])
+  
+  // Environmental Conditions
+  temperature   Float?
+  humidity      Float?
+  pressure      Float?
+  
+  // Chain of Custody
+  itemId        String
+  item          Item     @relation(fields: [itemId], references: [id])
+  handledById   String
+  handledBy     User     @relation(fields: [handledById], references: [id])
+  
+  // Digital Evidence
+  photos        String[] // URLs to encrypted photos
+  documents     String[] // URLs to related documents
+  
+  // Compliance
+  witnessedBy   String?  // Additional witness
+  notes         String?
+  
+  // Blockchain
+  blockchainTxHash String?
+  
+  // Audit
+  eventTimestamp DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  
+  @@map("custody_events")
+}
+
+model DigitalSignature {
+  id            String   @id @default(cuid())
+  signatureHash String   // Cryptographic signature
+  algorithm     String   @default("SHA-256")
+  certificate   String?  // X.509 certificate
+  
+  // What was signed
+  itemId        String?
+  item          Item?    @relation(fields: [itemId], references: [id])
+  
+  // Who signed
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  
+  // When signed
+  signedAt      DateTime @default(now())
+  expiresAt     DateTime?
+  
+  // Purpose
+  purpose       String   // "custody_transfer", "test_result", "disposal", etc.
+  documentHash  String   // Hash of the signed document
+  
+  // Audit
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("digital_signatures")
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  action        String   // CREATE, READ, UPDATE, DELETE, TRANSFER
+  entityType    String   // Item, User, CustodyEvent, etc.
+  entityId      String   // ID of the affected entity
+  
+  // Change Details
+  oldValues     Json?    // Previous state
+  newValues     Json?    // New state
+  changeReason  String?
+  
+  // Context
+  ipAddress     String?
+  userAgent     String?
+  requestId     String?
+  
+  // Relationships
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  itemId        String?
+  item          Item?    @relation(fields: [itemId], references: [id])
+  
+  // Compliance
+  complianceFlags String[] // HIPAA, GDPR violations, etc.
+  
+  // Immutable timestamp
+  timestamp     DateTime @default(now())
+  
+  @@map("audit_logs")
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([timestamp])
+}
+
+model TokenTransaction {
+  id              String   @id @default(cuid())
+  transactionHash String   @unique
+  blockNumber     Int
+  
+  // Token Details
+  fromAddress     String?
+  toAddress       String
+  amount          String   // Use string for precise decimal handling
+  tokenType       String   // CHAIN, reward tokens, etc.
+  
+  // Purpose
+  purpose         String   // "compliance_reward", "quality_bonus", "participation"
+  relatedItemId   String?
+  relatedUserId   String?
+  
+  // Metadata
+  metadata        Json?
+  
+  // Audit
+  timestamp       DateTime @default(now())
+  createdAt       DateTime @default(now())
+  
+  @@map("token_transactions")
+}
+
+// IoT Device Management
+model IoTDevice {
+  id              String   @id @default(cuid())
+  heliumDeviceId  String   @unique  // Helium Console device ID
+  deviceType      String   // "TEMP_SENSOR", "GPS_TRACKER", "SMART_CONTAINER", etc.
+  name            String
+  description     String?
+  status          String   @default("OFFLINE") // "ONLINE", "WARNING", "OFFLINE"
+  
+  // Device Status
+  isActive        Boolean  @default(true)
+  batteryLevel    Float?   // 0-100
+  lastSeen        DateTime @default(now())
+  firmwareVersion String?
+  
+  // Current Readings
+  lastTemperature Float?
+  lastHumidity    Float?
+  lastPressure    Float?
+  lastLatitude    Float?
+  lastLongitude   Float?
+  
+  // Configuration
+  thresholds      Json?    // Temperature, humidity, geofence limits
+  transmissionInterval Int? // Minutes between transmissions
+  
+  // Relationships
+  locationId      String?
+  location        Location? @relation(fields: [locationId], references: [id])
+  itemId          String?
+  item            Item?     @relation(fields: [itemId], references: [id])
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  // Related Data
+  sensorReadings  SensorReading[]
+  alerts          IoTAlert[]
+  
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+  
+  @@map("iot_devices")
+}
+
+model SensorReading {
+  id              String   @id @default(cuid())
+  deviceId        String
+  device          IoTDevice @relation(fields: [deviceId], references: [heliumDeviceId])
+  
+  // Timestamp
+  timestamp       DateTime
+  
+  // Environmental Data
+  temperature     Float?
+  humidity        Float?
+  pressure        Float?
+  lightLevel      Float?
+  
+  // Location Data
+  latitude        Float?
+  longitude       Float?
+  locationAccuracy Float?  // GPS accuracy in meters
+  altitude        Float?
+  
+  // Device Status
+  batteryLevel    Float?
+  signalStrength  Float?
+  
+  // Network Metadata
+  rssi            Float?   // Received Signal Strength Indicator
+  snr             Float?   // Signal-to-Noise Ratio
+  
+  // Raw Data
+  rawData         Json?    // Original payload from Helium
+  
+  // Audit
+  createdAt       DateTime @default(now())
+  
+  @@map("sensor_readings")
+  @@index([deviceId, timestamp])
+  @@index([timestamp])
+}
+
+model IoTAlert {
+  id              String   @id @default(cuid())
+  deviceId        String
+  device          IoTDevice @relation(fields: [deviceId], references: [heliumDeviceId])
+  
+  // Alert Details
+  alertType       String   // "TEMP_HIGH", "BATTERY_LOW", "LOCATION_VIOLATION", etc.
+  severity        String   // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  message         String
+  
+  // Threshold Information
+  threshold       Float?
+  currentValue    Float?
+  
+  // Resolution
+  isResolved      Boolean  @default(false)
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolutionNotes String?
+  
+  // Audit
+  timestamp       DateTime @default(now())
+  createdAt       DateTime @default(now())
+  
+  @@map("iot_alerts")
+  @@index([deviceId, isResolved])
+  @@index([timestamp])
+}
+
+// Helium Network Integration
+model HeliumWebhook {
+  id              String   @id @default(cuid())
+  webhookId       String   @unique  // Helium Console webhook ID
+  name            String
+  endpoint        String
+  secret          String   // Webhook validation secret
+  isActive        Boolean  @default(true)
+  
+  // Organization
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  // Statistics
+  lastReceived    DateTime?
+  totalReceived   Int      @default(0)
+  totalErrors     Int      @default(0)
+  
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("helium_webhooks")
+}
+
+// Workflow Engine Models
+enum WorkflowTriggerType {
+  MANUAL
+  IOT_ALERT
+  SCHEDULE
+  API
+  THRESHOLD
+}
+
+enum WorkflowStatus {
+  PENDING
+  IN_PROGRESS
+  AWAITING_APPROVAL
+  APPROVED
+  EXECUTING
+  COMPLETED
+  FAILED
+  REJECTED
+  CANCELLED
+}
+
+enum WorkflowStepStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
+enum WorkflowActionType {
+  TRANSFER
+  ALERT
+  NOTIFY
+  APPROVE
+  QUARANTINE
+  UPDATE
+  EXECUTE_SCRIPT
+  EMAIL
+  SMS
+}
+
+model Workflow {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  workflowType    String   // "STANDARD_TRANSFER", "TEMPERATURE_TRIGGERED", "SCHEDULED_TRANSFER", "EMERGENCY_RECALL"
+  
+  // Trigger Configuration
+  triggerType     WorkflowTriggerType
+  triggerConfig   Json     // Type-specific trigger configuration
+  
+  // Rules and Conditions
+  conditions      Json     // Array of WorkflowCondition
+  actions         Json     // Array of WorkflowAction
+  
+  // Settings
+  isActive        Boolean  @default(true)
+  priority        Int      @default(0)
+  timeout         Int?     // Timeout in minutes
+  
+  // Relationships
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  // Related Data
+  instances       WorkflowInstance[]
+  schedules       WorkflowSchedule[]
+  
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+  
+  @@map("workflows")
+}
+
+model WorkflowInstance {
+  id              String   @id @default(cuid())
+  workflowId      String
+  workflow        Workflow @relation(fields: [workflowId], references: [id])
+  
+  // Instance Details
+  status          WorkflowStatus @default(PENDING)
+  triggerData     Json?    // Data that triggered this instance
+  context         Json?    // Runtime context and variables
+  
+  // Execution Details
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  errorMessage    String?
+  retryCount      Int      @default(0)
+  
+  // Related Entity
+  relatedItemId   String?  // Item that triggered the workflow
+  relatedItem     Item?    @relation(fields: [relatedItemId], references: [id])
+  
+  // Steps and Approvals
+  steps           WorkflowStep[]
+  approvals       WorkflowApproval[]
+  
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("workflow_instances")
+}
+
+model WorkflowStep {
+  id              String   @id @default(cuid())
+  instanceId      String
+  instance        WorkflowInstance @relation(fields: [instanceId], references: [id])
+  
+  // Step Details
+  stepType        String   // "VALIDATION", "TRANSFER", "NOTIFICATION", "APPROVAL", etc.
+  stepOrder       Int
+  status          WorkflowStepStatus @default(PENDING)
+  
+  // Execution Data
+  inputData       Json?
+  outputData      Json?
+  errorMessage    String?
+  
+  // Timing
+  startedAt       DateTime?
+  completedAt     DateTime?
+  
+  // Execution Context
+  executedById    String?
+  executedBy      User?    @relation(fields: [executedById], references: [id])
+  
+  // Approvals for this step
+  approvals       WorkflowApproval[]
+  
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("workflow_steps")
+}
+
+model WorkflowApproval {
+  id              String   @id @default(cuid())
+  instanceId      String
+  instance        WorkflowInstance @relation(fields: [instanceId], references: [id])
+  stepId          String?
+  step            WorkflowStep? @relation(fields: [stepId], references: [id])
+  
+  // Approval Details
+  approverId      String
+  approver        User     @relation(fields: [approverId], references: [id])
+  status          String   @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  
+  // Response
+  comments        String?
+  approvedAt      DateTime?
+  rejectionReason String?
+  
+  // Configuration
+  isRequired      Boolean  @default(true)
+  deadline        DateTime?
+  
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("workflow_approvals")
+}
+
+model WorkflowRule {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  
+  // Rule Configuration
+  ruleType        String   // "ENVIRONMENTAL", "APPROVAL", "BATCH", "COMPLIANCE"
+  conditions      Json     // Array of conditions to check
+  actions         Json     // Array of actions to execute
+  
+  // Settings
+  isActive        Boolean  @default(true)
+  priority        Int      @default(0)
+  
+  // Relationships
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+  
+  @@map("workflow_rules")
+}
+
+model WorkflowSchedule {
+  id              String   @id @default(cuid())
+  workflowId      String
+  workflow        Workflow @relation(fields: [workflowId], references: [id])
+  
+  // Schedule Configuration
+  cronExpression  String   // Cron expression for scheduling
+  timezone        String   @default("UTC")
+  
+  // Status
+  isActive        Boolean  @default(true)
+  lastRun         DateTime?
+  nextRun         DateTime?
+  
+  // Execution History
+  totalRuns       Int      @default(0)
+  successfulRuns  Int      @default(0)
+  failedRuns      Int      @default(0)
+  
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("workflow_schedules")
+}
+

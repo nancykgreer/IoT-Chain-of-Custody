@@ -1,0 +1,171 @@
+<div class="monitoring-dashboard">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1>
+        <mat-icon>monitor_heart</mat-icon>
+        Real-Time Environmental Monitoring
+      </h1>
+      
+      <div class="header-actions">
+        <!-- Connection Status -->
+        <div class="connection-status" [class.connected]="isConnected" [class.disconnected]="!isConnected">
+          <mat-icon>{{ isConnected ? 'wifi' : 'wifi_off' }}</mat-icon>
+          <span>{{ isConnected ? 'Connected' : 'Disconnected' }}</span>
+        </div>
+
+        <!-- Timeframe Selector -->
+        <mat-form-field appearance="outline" class="timeframe-selector">
+          <mat-label>Timeframe</mat-label>
+          <mat-select [(value)]="selectedTimeframe" (selectionChange)="onTimeframeChange($event.value)">
+            <mat-option value="1h">Last Hour</mat-option>
+            <mat-option value="24h">Last 24 Hours</mat-option>
+            <mat-option value="7d">Last 7 Days</mat-option>
+            <mat-option value="30d">Last 30 Days</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Refresh Button -->
+        <button mat-icon-button (click)="onRefreshData()" [disabled]="isLoading" matTooltip="Refresh Data">
+          <mat-icon [class.spinning]="isLoading">refresh</mat-icon>
+        </button>
+
+        <!-- Last Update -->
+        <div class="last-update">
+          <small>Last updated: {{ lastUpdate | date:'short' }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="dashboard-content" *ngIf="!isLoading; else loadingTemplate">
+    <!-- Key Metrics Row -->
+    <div class="metrics-row">
+      <app-real-time-metrics 
+        [analytics]="analytics"
+        [devicesCount]="devices.length"
+        [onlineCount]="onlineDevicesCount"
+        [alertsCount]="alerts.length"
+        [criticalAlerts]="criticalAlertsCount">
+      </app-real-time-metrics>
+    </div>
+
+    <!-- Main Dashboard Grid -->
+    <div class="dashboard-grid">
+      <!-- Left Column: Device Status & Alerts -->
+      <div class="left-column">
+        <!-- Device Status Overview -->
+        <mat-card class="device-status-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>devices</mat-icon>
+              Device Status
+            </mat-card-title>
+            <mat-card-subtitle>{{ devices.length }} devices total</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <app-device-status 
+              [devices]="devices"
+              (deviceSelect)="onDeviceSelect($event)">
+            </app-device-status>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Active Alerts -->
+        <mat-card class="alerts-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon [class.critical]="criticalAlertsCount > 0">notification_important</mat-icon>
+              Active Alerts
+            </mat-card-title>
+            <mat-card-subtitle>
+              {{ alerts.length }} total 
+              <span *ngIf="criticalAlertsCount > 0" class="critical-count">
+                ({{ criticalAlertsCount }} critical)
+              </span>
+            </mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <app-alerts-panel 
+              [alerts]="alerts"
+              [showResolveAction]="true"
+              (alertResolve)="onAlertResolve($event)">
+            </app-alerts-panel>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Center Column: Environmental Charts -->
+      <div class="center-column">
+        <!-- Temperature Overview -->
+        <mat-card class="environmental-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>thermostat</mat-icon>
+              Temperature Monitoring
+            </mat-card-title>
+            <mat-card-subtitle>
+              Average: {{ averageTemperature ? (averageTemperature | number:'1.1-1') + '°C' : 'N/A' }}
+            </mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <app-environmental-chart 
+              [devices]="devices"
+              metric="temperature"
+              [timeframe]="selectedTimeframe">
+            </app-environmental-chart>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Humidity Overview -->
+        <mat-card class="environmental-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>water_drop</mat-icon>
+              Humidity Monitoring
+            </mat-card-title>
+            <mat-card-subtitle>
+              Average: {{ averageHumidity ? (averageHumidity | number:'1.1-1') + '%' : 'N/A' }}
+            </mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <app-environmental-chart 
+              [devices]="devices"
+              metric="humidity"
+              [timeframe]="selectedTimeframe">
+            </app-environmental-chart>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Right Column: Device List -->
+      <div class="right-column">
+        <mat-card class="device-list-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>list</mat-icon>
+              All Devices
+            </mat-card-title>
+            <mat-card-subtitle>Real-time status and readings</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <app-device-list 
+              [devices]="devices"
+              [showActions]="true"
+              (deviceSelect)="onDeviceSelect($event)">
+            </app-device-list>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Template -->
+  <ng-template #loadingTemplate>
+    <div class="loading-container">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Loading monitoring dashboard...</p>
+    </div>
+  </ng-template>
+</div>
