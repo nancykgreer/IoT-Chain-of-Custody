@@ -33,9 +33,9 @@ This is a **demonstration application** with simulated data and placeholder inte
 - Approval workflows for high-value transfers
 
 ### 🪙 **Blockchain Integration**
-- Avalanche blockchain for future tokenomics
-- CHAIN token incentive system
-- Compliance rewards and quality metrics
+- **Demo**: Simulated CHAIN token rewards (perfect for presentations)
+- **Future**: Real Avalanche blockchain integration (see blockchain-integration branch)
+- Compliance rewards and quality metrics calculations
 
 ### 📱 **Mobile-First Design**
 - Progressive Web App (PWA) capabilities
@@ -208,11 +208,20 @@ healthcare-chain-custody/
 
 ## 📚 Documentation
 
+### **Main Branch (Demo Version)**
 - [`SETUP_AND_DEMO_INSTRUCTIONS.md`](SETUP_AND_DEMO_INSTRUCTIONS.md) - Complete setup guide
-- [`GITHUB_SECURITY_GUIDE.md`](GITHUB_SECURITY_GUIDE.md) - Security considerations
 - [`docs/DEMONSTRATION_GUIDE.md`](docs/DEMONSTRATION_GUIDE.md) - Presentation guide
-- [`docs/AVALANCHE_TOKENOMICS.md`](docs/AVALANCHE_TOKENOMICS.md) - Token economics
+- [`docs/DEMO_BLOCKCHAIN_FEATURES.md`](docs/DEMO_BLOCKCHAIN_FEATURES.md) - Simulated blockchain features
+- [`docs/WORKFLOW_ENGINE.md`](docs/WORKFLOW_ENGINE.md) - Workflow automation
+- [`docs/HELIUM_SETUP_GUIDE.md`](docs/HELIUM_SETUP_GUIDE.md) - IoT integration
 - [`backend/src/scripts/README.md`](backend/src/scripts/README.md) - Simulation scripts
+
+### **Blockchain Integration Branch**
+- [`docs/AVALANCHE_TOKENOMICS.md`](docs/AVALANCHE_TOKENOMICS.md) - Token economics design
+- [`docs/BLOCKCHAIN_INTEGRATION_COMPLETE.md`](docs/BLOCKCHAIN_INTEGRATION_COMPLETE.md) - Full blockchain features
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) - System architecture
+- [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md) - API reference
+- [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md) - Production deployment
 
 ## 🤝 Contributing
 

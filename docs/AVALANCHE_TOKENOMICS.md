@@ -1,8 +1,12 @@
 # Healthcare Chain of Custody - Avalanche Tokenomics Design
 
+## ⚠️ **Note: This is the design for the blockchain-integration branch**
+
+This document describes the **planned tokenomics** for the full blockchain integration. The **main branch** currently uses **simulated tokens** for demo purposes. See [DEMO_BLOCKCHAIN_FEATURES.md](DEMO_BLOCKCHAIN_FEATURES.md) for current functionality.
+
 ## Overview
 
-The Healthcare Chain of Custody system integrates with Avalanche blockchain to provide tokenized incentives for compliance, quality metrics, and network participation. The CHAIN token creates economic incentives that align stakeholders toward better healthcare outcomes and regulatory compliance.
+The Healthcare Chain of Custody system is designed to integrate with Avalanche blockchain to provide tokenized incentives for compliance, quality metrics, and network participation. The CHAIN token creates economic incentives that align stakeholders toward better healthcare outcomes and regulatory compliance.
 
 ## Token Overview
 
