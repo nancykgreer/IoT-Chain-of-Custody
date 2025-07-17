@@ -11,6 +11,7 @@ import { custodyRoutes } from './routes/custody';
 import { auditRoutes } from './routes/audit';
 import { iotRoutes } from './routes/iot';
 import workflowRoutes from './routes/workflow';
+import blockchainRoutes from './routes/blockchain';
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ app.use('/api/items', itemRoutes);
 app.use('/api/custody', custodyRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/workflows', workflowRoutes);
+app.use('/api/blockchain', blockchainRoutes);
 app.use('/', iotRoutes); // IoT routes include webhooks and API endpoints
 
 // Error handling middleware

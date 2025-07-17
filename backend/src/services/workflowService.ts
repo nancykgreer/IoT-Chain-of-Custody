@@ -2,6 +2,7 @@ import { PrismaClient, WorkflowTriggerType, WorkflowStatus, WorkflowStepStatus }
 import { AuditService } from './auditService';
 import { NotificationService } from './notificationService';
 import { WebSocketService } from './websocketService';
+import { avalancheService } from './avalancheService';
 
 export interface WorkflowCondition {
   field: string;
@@ -261,6 +262,9 @@ export class WorkflowService {
 
     // Mark instance as completed
     await this.updateInstanceStatus(instanceId, WorkflowStatus.COMPLETED);
+    
+    // Award blockchain rewards for successful workflow completion
+    await this.awardWorkflowCompletionReward(instanceId);
   }
 
   private async executeAction(action: WorkflowAction, instanceId: string, userId?: string): Promise<any> {
@@ -681,5 +685,169 @@ export class WorkflowService {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  /**
+   * Award blockchain rewards for successful workflow completion
+   */
+  private async awardWorkflowCompletionReward(instanceId: string): Promise<void> {
+    try {
+      const instance = await this.prisma.workflowInstance.findUnique({
+        where: { id: instanceId },
+        include: {
+          workflow: {
+            include: {
+              organization: {
+                include: {
+                  wallet: true
+                }
+              }
+            }
+          },
+          relatedItem: true
+        }
+      });
+
+      if (!instance || !instance.workflow.organization) {
+        console.log('No organization found for workflow reward');
+        return;
+      }
+
+      const organization = instance.workflow.organization;
+      const workflowType = instance.workflow.workflowType;
+      
+      // Calculate reward based on workflow type and complexity
+      const rewardAmount = this.calculateWorkflowReward(instance.workflow);
+      
+      if (rewardAmount > 0) {
+        // Get or create organization wallet
+        const wallet = await avalancheService.getOrCreateOrganizationWallet(organization.id);
+        
+        // Award the reward
+        const reason = `Workflow completion: ${instance.workflow.name}`;
+        await avalancheService.mintReward(
+          wallet.address,
+          rewardAmount.toString(),
+          reason,
+          organization.id
+        );
+
+        console.log(`🎉 Awarded ${rewardAmount} CHAIN tokens for workflow completion: ${instance.workflow.name}`);
+        
+        // Broadcast reward notification
+        this.websocketService.broadcast({
+          type: 'workflow_reward',
+          data: {
+            instanceId,
+            workflowName: instance.workflow.name,
+            amount: rewardAmount,
+            reason,
+            organizationId: organization.id
+          }
+        });
+      }
+      
+    } catch (error) {
+      console.error('Failed to award workflow completion reward:', error);
+      // Don't throw error to avoid breaking workflow completion
+    }
+  }
+
+  /**
+   * Calculate reward amount based on workflow type and execution metrics
+   */
+  private calculateWorkflowReward(workflow: any): number {
+    const baseRewards = {
+      'COLD_CHAIN_COMPLIANCE': 50,
+      'EMERGENCY_RECALL': 100,
+      'HIGH_VALUE_TRANSFER': 25,
+      'BATCH_TRANSFER': 30,
+      'QUALITY_CONTROL': 40,
+      'AUDIT_TRAIL': 20,
+      'COMPLIANCE_CHECK': 35,
+      'WORKFLOW_AUTOMATION': 15
+    };
+
+    // Base reward for workflow type
+    let baseReward = baseRewards[workflow.workflowType] || 10;
+
+    // Multipliers based on workflow characteristics
+    let multiplier = 1.0;
+
+    // Priority bonus
+    if (workflow.priority > 5) {
+      multiplier += 0.5; // High priority workflows get 50% bonus
+    }
+
+    // Complexity bonus (more actions = higher reward)
+    const actionCount = Array.isArray(workflow.actions) ? workflow.actions.length : 0;
+    if (actionCount > 3) {
+      multiplier += 0.2; // Complex workflows get 20% bonus
+    }
+
+    // Emergency workflow bonus
+    if (workflow.name.toLowerCase().includes('emergency') || 
+        workflow.name.toLowerCase().includes('urgent')) {
+      multiplier += 0.3; // Emergency workflows get 30% bonus
+    }
+
+    return Math.floor(baseReward * multiplier);
+  }
+
+  /**
+   * Award compliance rewards based on organization performance
+   */
+  async awardComplianceRewards(organizationId: string, metrics: {
+    coldChainScore?: number;
+    auditTrailScore?: number;
+    responseTimeScore?: number;
+    overallScore: number;
+  }): Promise<void> {
+    try {
+      if (metrics.overallScore < 60) {
+        console.log('Organization score too low for compliance rewards');
+        return;
+      }
+
+      // Get organization wallet
+      const wallet = await avalancheService.getOrCreateOrganizationWallet(organizationId);
+      
+      // Calculate reward based on scores
+      const baseReward = this.calculateComplianceReward(metrics);
+      
+      if (baseReward > 0) {
+        await avalancheService.issueComplianceReward(
+          wallet.address,
+          baseReward.toString(),
+          metrics.overallScore,
+          organizationId
+        );
+
+        console.log(`🏆 Awarded ${baseReward} CHAIN tokens for compliance (score: ${metrics.overallScore})`);
+      }
+      
+    } catch (error) {
+      console.error('Failed to award compliance rewards:', error);
+    }
+  }
+
+  /**
+   * Calculate compliance reward amount based on performance metrics
+   */
+  private calculateComplianceReward(metrics: {
+    coldChainScore?: number;
+    auditTrailScore?: number;
+    responseTimeScore?: number;
+    overallScore: number;
+  }): number {
+    const score = metrics.overallScore;
+    
+    // Reward tiers based on compliance score
+    if (score >= 95) return 500; // Platinum tier
+    if (score >= 85) return 200; // Gold tier
+    if (score >= 75) return 100; // Silver tier
+    if (score >= 60) return 50;  // Bronze tier
+    
+    return 0; // Below threshold
   }
 }

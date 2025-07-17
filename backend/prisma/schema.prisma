@@ -79,6 +79,12 @@ model Organization {
   workflows   Workflow[]
   workflowRules WorkflowRule[]
   
+  // Blockchain Relationships
+  wallet          OrganizationWallet?
+  blockchainTransactions BlockchainTransaction[]
+  complianceRewards ComplianceReward[]
+  rewardCalculations RewardCalculation[]
+  
   // Audit
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -314,6 +320,213 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([userId])
   @@index([timestamp])
+}
+
+// Blockchain Integration Models
+enum BlockchainNetwork {
+  AVALANCHE_MAINNET
+  AVALANCHE_FUJI
+  AVALANCHE_LOCAL
+}
+
+enum TransactionType {
+  TOKEN_MINT
+  TOKEN_TRANSFER
+  COMPLIANCE_REWARD
+  QUALITY_BONUS
+  WORKFLOW_REWARD
+  GOVERNANCE_VOTE
+  STAKING_REWARD
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  REVERTED
+}
+
+model BlockchainTransaction {
+  id              String   @id @default(cuid())
+  transactionHash String   @unique
+  blockNumber     BigInt?
+  blockHash       String?
+  
+  // Network Details
+  network         BlockchainNetwork
+  gasUsed         BigInt?
+  gasPrice        BigInt?
+  
+  // Transaction Details
+  type            TransactionType
+  status          TransactionStatus @default(PENDING)
+  fromAddress     String?
+  toAddress       String
+  amount          String   // Use string for precise decimal handling
+  tokenAddress    String?  // Smart contract address
+  
+  // Purpose and Context
+  purpose         String   // Human-readable description
+  relatedItemId   String?
+  relatedUserId   String?
+  relatedOrganizationId String?
+  
+  // Metadata
+  metadata        Json?
+  errorMessage    String?
+  retryCount      Int      @default(0)
+  
+  // Relationships
+  organization    Organization? @relation(fields: [relatedOrganizationId], references: [id])
+  
+  // Audit
+  timestamp       DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("blockchain_transactions")
+  @@index([transactionHash])
+  @@index([network, status])
+  @@index([type, timestamp])
+}
+
+model OrganizationWallet {
+  id              String   @id @default(cuid())
+  organizationId  String   @unique
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  // Wallet Details
+  address         String   @unique
+  privateKeyEncrypted String? // Encrypted private key (for automated operations)
+  publicKey       String?
+  
+  // Network
+  network         BlockchainNetwork
+  
+  // Status
+  isActive        Boolean  @default(true)
+  isMultiSig      Boolean  @default(false)
+  multiSigThreshold Int?
+  multiSigOwners  String[] // Array of addresses
+  
+  // Balances
+  balances        TokenBalance[]
+  
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("organization_wallets")
+}
+
+model TokenBalance {
+  id              String   @id @default(cuid())
+  walletId        String
+  wallet          OrganizationWallet @relation(fields: [walletId], references: [id])
+  
+  // Token Details
+  tokenAddress    String   // Smart contract address
+  tokenSymbol     String   // CHAIN, AVAX, etc.
+  tokenName       String?
+  
+  // Balance
+  balance         String   // Current balance (string for precision)
+  lockedBalance   String   @default("0") // Locked/staked tokens
+  
+  // Rewards Tracking
+  totalEarned     String   @default("0")
+  totalSpent      String   @default("0")
+  
+  // Metadata
+  lastUpdated     DateTime @default(now())
+  
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("token_balances")
+  @@unique([walletId, tokenAddress])
+}
+
+model ComplianceReward {
+  id              String   @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  // Reward Details
+  amount          String   // Token amount awarded
+  category        String   // "COLD_CHAIN", "AUDIT_TRAIL", "REGULATORY", etc.
+  score           Int      // Compliance score (0-100)
+  
+  // Calculation Details
+  baseReward      String
+  multiplier      Float
+  streakBonus     String   @default("0")
+  qualityBonus    String   @default("0")
+  
+  // Context
+  period          String   // "DAILY", "WEEKLY", "MONTHLY"
+  metrics         Json     // Detailed metrics that earned the reward
+  
+  // Blockchain
+  transactionHash String?
+  blockNumber     BigInt?
+  status          TransactionStatus @default(PENDING)
+  
+  // Audit
+  calculatedAt    DateTime @default(now())
+  awardedAt       DateTime?
+  createdAt       DateTime @default(now())
+  
+  @@map("compliance_rewards")
+  @@index([organizationId, period])
+  @@index([calculatedAt])
+}
+
+model RewardCalculation {
+  id              String   @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  // Calculation Period
+  startDate       DateTime
+  endDate         DateTime
+  period          String   // "DAILY", "WEEKLY", "MONTHLY"
+  
+  // Compliance Metrics
+  coldChainScore  Int?     // 0-100
+  auditTrailScore Int?     // 0-100
+  regulatoryScore Int?     // 0-100
+  qualityScore    Int?     // 0-100
+  responseTimeScore Int?   // 0-100
+  workflowScore   Int?     // 0-100
+  overallScore    Int      // Weighted average
+  
+  // Streak Information
+  streakDays      Int      @default(0)
+  consecutivePeriods Int   @default(0)
+  
+  // Reward Calculation
+  baseReward      String
+  streakMultiplier Float   @default(1.0)
+  qualityMultiplier Float  @default(1.0)
+  finalReward     String
+  
+  // Status
+  isProcessed     Boolean  @default(false)
+  processedAt     DateTime?
+  
+  // Related Reward
+  complianceRewardId String?
+  complianceReward ComplianceReward? @relation(fields: [complianceRewardId], references: [id])
+  
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("reward_calculations")
+  @@unique([organizationId, startDate, endDate])
+  @@index([period, overallScore])
 }
 
 model TokenTransaction {
